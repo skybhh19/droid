@@ -149,7 +149,7 @@ class RobotEnv(gym.Env):
 
         # Define Action Space #
         assert action_space in ["cartesian_position", "joint_position", "cartesian_velocity", "joint_velocity"]
-        self.eef_bounds = np.array([[0.37, -0.3, 0.228], [0.73, 0.26, 0.55]])
+        self.eef_bounds = np.array([[0.37, -0.3, 0.228], [0.73, 0.26, 0.52]])
         print("Current robot space is", self.eef_bounds)
         self.action_space = action_space
         self.gripper_action_space = gripper_action_space
@@ -262,8 +262,8 @@ class RobotEnv(gym.Env):
         ))
 
 
-        # obs_dict.update(camera_obs)
-        obs_dict.update(camera_dict)
+        obs_dict.update(camera_obs)
+        # obs_dict.update(camera_dict)
         obs_dict["timestamp"]["cameras"] = camera_timestamp
 
         # Camera Info #
