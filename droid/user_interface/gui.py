@@ -1150,7 +1150,7 @@ class CameraPage(tk.Frame):
 
         # Add Mode Specific Stuff #
         if "traj" in self.mode:
-            self.controller.robot.reset_robot(randomize=False)
+            self.controller.robot.reset_robot(randomize=True)
 
             self.timer.place(relx=0.79, rely=0.01)
             self.update_timer(time.time())

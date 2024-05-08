@@ -46,7 +46,7 @@ class DataCollecter:
             os.makedirs(self.failure_logdir)
         self.save_data = save_data
 
-    def reset_robot(self, randomize=False):
+    def reset_robot(self, randomize=True):
         self.env._robot.establish_connection()
         self.controller.reset_state()
         self.env.reset(randomize=randomize)
