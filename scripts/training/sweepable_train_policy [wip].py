@@ -30,7 +30,7 @@ variant = dict(
     data_processing_kwars=dict(
         timestep_filtering_kwargs=dict(
             # Eventually need to enable sweeper to take lists #
-            action_space="cartesian_delta",
+            action_space_type="cartesian_delta",
             robot_state_keys=["cartesian_pose", "gripper_position", "joint_positions", "joint_velocities"],
             camera_extrinsics=["hand_camera", "varied_camera", "fixed_camera"],
             image_views=["hand_camera", "varied_camera", "fixed_camera"],

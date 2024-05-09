@@ -245,7 +245,7 @@ def calibrate_camera(
         calib_pose = calibration_traj(i * step_size, hand_camera=hand_camera)
         desired_pose = change_pose_frame(calib_pose, pose_origin)
         action = np.concatenate([desired_pose, [0]])
-        env.update_robot(action, action_space="cartesian_position", blocking=False)
+        env.update_robot(action, action_space_type="cartesian_position", blocking=False)
 
         # Regularize Control Frequency #
         comp_time = time.time() - start_time
@@ -276,7 +276,7 @@ def replay_trajectory(
     env, filepath=None, assert_replayable_keys=["cartesian_position", "gripper_position", "joint_positions"]
 ):
     print("WARNING: STATE 'CLOSENESS' FOR REPLAYABILITY HAS NOT BEEN CALIBRATED")
-    gripper_key = "gripper_velocity" if "velocity" in env.action_space else "gripper_position"
+    gripper_key = "gripper_velocity" if "velocity" in env.action_space_type else "gripper_position"
 
     # Prepare Trajectory Reader #
     traj_reader = TrajectoryReader(filepath, read_images=False)
@@ -291,7 +291,7 @@ def replay_trajectory(
             init_joint_position = timestep["observation"]["robot_state"]["joint_positions"]
             init_gripper_position = timestep["observation"]["robot_state"]["gripper_position"]
             action = np.concatenate([init_joint_position, [init_gripper_position]])
-            env.update_robot(action, action_space="joint_position", blocking=True)
+            env.update_robot(action, action_space_type="joint_position", blocking=True)
 
         # TODO: Assert Replayability #
         # robot_state = env.get_state()[0]
@@ -304,7 +304,7 @@ def replay_trajectory(
         time.sleep(1 / env.control_hz)
 
         # Get Action In Desired Action Space #
-        arm_action = timestep["action"][env.action_space]
+        arm_action = timestep["action"][env.action_space_type]
         gripper_action = timestep["action"][gripper_key]
         action = np.concatenate([arm_action, [gripper_action]])
         controller_info = timestep["observation"]["controller_info"]

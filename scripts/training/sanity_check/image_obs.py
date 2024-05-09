@@ -17,7 +17,7 @@ variant = dict(
     ),
     data_processing_kwargs=dict(
         timestep_filtering_kwargs=dict(
-            action_space="cartesian_velocity",
+            action_space_type="cartesian_velocity",
             robot_state_keys=[],
             camera_extrinsics=[],
         ),

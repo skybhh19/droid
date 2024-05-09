@@ -2,6 +2,9 @@ from copy import deepcopy
 
 import gym
 import numpy as np
+import time
+from gym.spaces import Box, Dict
+
 
 from droid.calibration.calibration_utils import load_calibration_info
 from droid.camera_utils.info import camera_type_dict
@@ -9,26 +12,60 @@ from droid.camera_utils.wrappers.multi_camera_wrapper import MultiCameraWrapper
 from droid.misc.parameters import hand_camera_id, nuc_ip
 from droid.misc.server_interface import ServerInterface
 from droid.misc.time import time_ms
-from droid.misc.transformations import change_pose_frame
+from droid.misc.transformations import change_pose_frame, add_poses, euler_to_quat, pose_diff, quat_to_euler, angle_diff, add_angles
+from droid.robot_ik.robot_ik_solver import RobotIKSolver
+
 
 
 class RobotEnv(gym.Env):
-    def __init__(self, action_space="cartesian_velocity", gripper_action_space=None, camera_kwargs={}, do_reset=True):
+    def __init__(self, action_space_type="cartesian_velocity", camera_kwargs={}, do_reset=True,
+                 DoF=3):
         # Initialize Gym Environment
         super().__init__()
 
-        # Define Action Space #
-        assert action_space in ["cartesian_position", "joint_position", "cartesian_velocity", "joint_velocity"]
-        self.action_space = action_space
-        self.gripper_action_space = gripper_action_space
-        self.check_action_range = "velocity" in action_space
+        # physics
+        # self.DoF = 7 if ("cartesian" in action_space_type) else 8
+        self.DoF = DoF
+        assert self.DoF in [3, 4, 6]
+        self.control_hz = 15
 
         # Robot Configuration
-        self.reset_joints = np.array([0, -1 / 5 * np.pi, 0, -4 / 5 * np.pi, 0, 3 / 5 * np.pi, 0.0])
-        self.randomize_low = np.array([-0.1, -0.2, -0.1, -0.3, -0.3, -0.3])
-        self.randomize_high = np.array([0.1, 0.2, 0.1, 0.3, 0.3, 0.3])
-        self.DoF = 7 if ("cartesian" in action_space) else 8
-        self.control_hz = 15
+        # self.reset_joints = np.array([0, -1 / 5 * np.pi, 0, -4 / 5 * np.pi, 0, 3 / 5 * np.pi, 0.0])
+        self._gripper_angle = 1.544
+        if self._gripper_angle == 1.544:
+            self._default_angle = np.array([3.11231174, 0.00372336, -1.49605473])
+        elif self._gripper_angle == 0.:
+            self._default_angle = np.array([np.pi, 0., 0.])
+        self.reset_joints = np.array([0.0113871, 0.38554454, 0.00297691, -2.07930946, -0.0146654, 2.44864178, self._gripper_angle])
+        # self.reset_joints = np.array([0, 0.423, 0, -1.944, 0., 2.219, self._gripper_angle])
+
+        assert action_space_type in ["cartesian_velocity"]
+        self.eef_bounds = None
+        # self.eef_bounds = np.array([[0.37, -0.3, 0.1], [0.73, 0.26, 0.52]])
+        # print("Current robot space is", self.eef_bounds)
+        self.action_space_type = action_space_type
+        self.check_action_range = "velocity" in action_space_type
+
+        # EE position (x, y, z) + gripper width
+        if self.DoF == 3:
+            # self.ee_space = Box(
+            #     np.array([0.38, -0.25, 0.07, 0.00]),
+            #     np.array([0.70, 0.28, 0.35, 0.085]),
+            # )
+            self.ee_space = Box(
+                np.array([0.45, -0.24, 0.12, 0.00]),
+                np.array([0.7, 0.17, 0.3, 0.085]),
+            )
+        elif self.DoF == 4:
+            # EE position (x, y, z) + gripper width
+            self.ee_space = Box(
+                np.array([0.55, -0.06, 0.12, -1.57, 0.00]),
+                np.array([0.73, 0.25, 0.35, 0.0, 0.085]),
+            )
+
+        if self.DoF < 6:
+            self._ik_solver = RobotIKSolver()
+
 
         if nuc_ip is None:
             from franka.robot import FrankaRobot
@@ -45,20 +82,90 @@ class RobotEnv(gym.Env):
         # Reset Robot
         if do_reset:
             self.reset()
+            print(self.get_ee_angle())
+
+    def get_ee_pos(self):
+        '''Returns [x,y,z]'''
+        pose = self._robot.get_ee_pose()
+        return pose[:3]
+
+    def get_ee_angle(self):
+        '''Returns [yaw, pitch, roll]'''
+        pose = self._robot.get_ee_pose()
+        return pose[3:]
+
+    def _format_action(self, action):
+        '''Returns [x,y,z], [yaw, pitch, roll], close_gripper'''
+        default_delta_angle = angle_diff(self._default_angle, self._curr_angle)
+        if self.DoF == 3:
+            delta_pos, delta_angle, gripper = action[:-1], default_delta_angle, action[-1:]
+        elif self.DoF == 4:
+            delta_pos, delta_angle, gripper = action[:3], [default_delta_angle[0], default_delta_angle[1], action[3]], action[-1:]
+        elif self.DoF == 6:
+            delta_pos, delta_angle, gripper = action[:3], action[3:6], action[-1:]
+        return np.array(delta_pos), np.array(delta_angle), gripper
+
+    def _get_valid_pos_and_gripper(self, pos, gripper):
+        '''To avoid situations where robot can break the object / burn out joints,
+        allowing us to specify (x, y, z, gripper) where the robot cannot enter. Gripper is included
+        because (x, y, z) is different when gripper is open/closed.
+
+        There are two ways to do this: (a) reject action and maintain current pose or (b) project back
+        to valid space. Rejecting action works, but it might get stuck inside the box if no action can
+        take it outside. Projection is a hard problem, as it is a non-convex set :(, but we can follow
+        some rough heuristics.'''
+
+        # clip commanded position to satisfy box constraints
+        x_low, y_low, z_low = self.ee_space.low[:3]
+        x_high, y_high, z_high = self.ee_space.high[:3]
+        pos[0] = pos[0].clip(x_low, x_high) # new x
+        pos[1] = pos[1].clip(y_low, y_high) # new y
+        pos[2] = pos[2].clip(z_low, z_high) # new z
+
+        # todo: safety guarantee
+
+        return pos, gripper
+
+    @property
+    def _curr_pos(self):
+        return self.get_ee_pos()
+
+    @property
+    def _curr_angle(self):
+        return self.get_ee_angle()
 
     def step(self, action):
+        assert len(action) == 7
+        if self.DoF == 3:
+            action = np.concatenate([action[:3], action[6:]])
+        elif self.DoF == 4:
+            action = np.concatenate([action[:3], action[5:]])
+        assert len(action) == (self.DoF + 1)
+        if self.DoF < 6:
+            pos_vel, rot_vel, gripper_vel = self._format_action(action)
+            cartesian_delta = self._ik_solver.cartesian_velocity_to_delta(np.concatenate([pos_vel, rot_vel]))
+            lin_delta, rot_delta = cartesian_delta[:3], cartesian_delta[3:]
+            desired_pos, gripper_vel = self._get_valid_pos_and_gripper(self._curr_pos + lin_delta, gripper_vel)
+            desired_angle = add_angles(rot_delta, self._curr_angle)
+            if self.DoF == 4:
+                desired_angle[2] = desired_angle[2].clip(self.ee_space.low[3], self.ee_space.high[3])
+            pos_delta = desired_pos - self._curr_pos
+            rot_delta = angle_diff(desired_angle, self._curr_angle)
+            cartesian_vel = self._ik_solver.cartesian_delta_to_velocity(np.concatenate([pos_delta, rot_delta]))
+            action = np.concatenate([cartesian_vel, gripper_vel])
+
+        action = action.clip(-1, 1)
+
         # Check Action
-        assert len(action) == self.DoF
         if self.check_action_range:
-            assert (action.max() <= 1) and (action.min() >= -1)
+            assert (action.max() <= 1) and (action.min() >= -1), f'action: {action}'
 
         # Update Robot
         action_info = self.update_robot(
             action,
-            action_space=self.action_space,
-            gripper_action_space=self.gripper_action_space,
+            action_space_type=self.action_space_type,
         )
-
+        # print("cur pos", self.get_ee_pos())
         # Return Action Info
         return action_info
 
@@ -71,13 +178,13 @@ class RobotEnv(gym.Env):
             noise = None
 
         self._robot.update_joints(self.reset_joints, velocity=False, blocking=True, cartesian_noise=noise)
+        return self.get_observation()
 
-    def update_robot(self, action, action_space="cartesian_velocity", gripper_action_space=None, blocking=False):
+    def update_robot(self, action, action_space_type="cartesian_velocity", blocking=False):
         action_info = self._robot.update_command(
             action,
-            action_space=action_space,
-            gripper_action_space=gripper_action_space,
-            blocking=blocking
+            action_space_type=action_space_type,
+            blocking=blocking,
         )
         return action_info
 
@@ -115,7 +222,14 @@ class RobotEnv(gym.Env):
 
         # Camera Readings #
         camera_obs, camera_timestamp = self.read_cameras()
+        camera_dict = dict(image=dict(
+            wrist_image=camera_obs["image"]["19824535_left"][:, :, 0:3],
+            side_image=camera_obs["image"]["23404442_left"][:, :, 0:3],
+        ))
+
+
         obs_dict.update(camera_obs)
+        # obs_dict.update(camera_dict)
         obs_dict["timestamp"]["cameras"] = camera_timestamp
 
         # Camera Info #

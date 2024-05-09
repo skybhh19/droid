@@ -12,11 +12,11 @@ from droid.misc.parameters import hand_camera_id, droid_version, robot_serial_nu
 
 # Prepare Data Folder #
 dir_path = os.path.dirname(os.path.realpath(__file__))
-data_dir = os.path.join(dir_path, "../../data")
+data_dir = os.path.join(dir_path, "../../data/")
 
 
 class DataCollecter:
-    def __init__(self, env, controller, policy=None, save_data=True, save_traj_dir=None):
+    def __init__(self, env, controller, policy=None, save_data=True, save_traj_dir=None, task=None):
         self.env = env
         self.controller = controller
         self.policy = policy
@@ -38,6 +38,7 @@ class DataCollecter:
         # Make Sure Log Directorys Exist #
         if save_traj_dir is None:
             save_traj_dir = data_dir
+        save_traj_dir = os.path.join(save_traj_dir, task)
         self.success_logdir = os.path.join(save_traj_dir, "success", str(date.today()))
         self.failure_logdir = os.path.join(save_traj_dir, "failure", str(date.today()))
         if not os.path.isdir(self.success_logdir):
@@ -46,7 +47,7 @@ class DataCollecter:
             os.makedirs(self.failure_logdir)
         self.save_data = save_data
 
-    def reset_robot(self, randomize=True):
+    def reset_robot(self, randomize=False):
         self.env._robot.establish_connection()
         self.controller.reset_state()
         self.env.reset(randomize=randomize)
@@ -82,8 +83,8 @@ class DataCollecter:
             save_filepath = None
             recording_folderpath = None
         else:
-            if len(self.full_cam_ids) != 6:
-                raise ValueError("WARNING: User is trying to collect data without all three cameras running!")
+            if len(self.full_cam_ids) != 4:
+                raise ValueError("WARNING: User is trying to collect data without two cameras running!")
             save_filepath = os.path.join(self.failure_logdir, info["time"], "trajectory.h5")
             recording_folderpath = os.path.join(self.failure_logdir, info["time"], "recordings")
             if not os.path.isdir(recording_folderpath):

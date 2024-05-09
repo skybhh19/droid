@@ -129,7 +129,7 @@ export ROBOT_TYPE=$robot_type
 export ROBOT_SERIAL_NUMBER=$robot_serial_number
 export HAND_CAMERA_ID=$hand_camera_id
 export VARIED_CAMERA_1_ID=$varied_camera_1_id
-export VARIED_CAMERA_2_ID=$varied_camera_2_id
+#export VARIED_CAMERA_2_ID=$varied_camera_2_id
 export LIBFRANKA_VERSION=$libfranka_version
 export ROOT_DIR=$ROOT_DIR
 rm temp_env_vars.sh

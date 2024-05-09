@@ -48,7 +48,7 @@ traj_loading_kwargs = dict(
 
 timestep_filtering_kwargs = dict(
     # Eventually need to enable sweeper to take lists #
-    action_space="cartesian_velocity",
+    action_space_type="cartesian_velocity",
     robot_state_keys=[],
     camera_extrinsics=[],
 )
@@ -131,7 +131,7 @@ def single_reader_script():
 # data_processing_kwargs=dict(
 #     timestep_filtering_kwargs=dict(
 #         # Eventually need to enable sweeper to take lists #
-#         action_space='cartesian_velocity',
+#         action_space_type='cartesian_velocity',
 #         robot_state_keys=[],
 #         camera_extrinsics=[],
 #         image_views=['hand_camera'],

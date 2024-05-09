@@ -1,7 +1,7 @@
 # IMPORTANT VARIABLES #
 new_task_prob = 0.1
 compositional_task_prob = 0.1
-scene_change_prob = 0.2
+scene_change_prob = 0.
 move_robot_frequency = 100
 
 task_weights = {

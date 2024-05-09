@@ -56,13 +56,13 @@ def eval_launcher(variant, run_id, exp_id):
     )
 
     # Prepare Environment #
-    policy_action_space = policy_timestep_filtering_kwargs["action_space"]
+    policy_action_space_type = policy_timestep_filtering_kwargs["action_space_type"]
 
     camera_kwargs = variant.get("camera_kwargs", {})
     policy_camera_kwargs = policy_variant.get("camera_kwargs", {})
     policy_camera_kwargs.update(camera_kwargs)
 
-    env = RobotEnv(action_space=policy_action_space, camera_kwargs=policy_camera_kwargs)
+    env = RobotEnv(action_space_type=policy_action_space_type, camera_kwargs=policy_camera_kwargs)
     controller = VRPolicy()
 
     # Launch GUI #

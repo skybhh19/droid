@@ -53,11 +53,11 @@ def eval_launcher(variant, run_id, exp_id):
     # determine the action space (relative or absolute)
     action_keys = config["train"]["action_keys"]
     if "action/rel_pos" in action_keys:
-        action_space = "cartesian_velocity"
+        action_space_type = "cartesian_velocity"
         for k in action_keys:
             assert not k.startswith("action/abs_")
     elif "action/abs_pos" in action_keys:
-        action_space = "cartesian_position"
+        action_space_type = "cartesian_position"
         for k in action_keys:
             assert not k.startswith("action/rel_")
     else:
@@ -65,20 +65,20 @@ def eval_launcher(variant, run_id, exp_id):
 
     # determine the action space for the gripper
     if "action/gripper_velocity" in action_keys:
-        gripper_action_space = "velocity"
+        gripper_action_space_type = "velocity"
     elif "action/gripper_position" in action_keys:
-        gripper_action_space = "position"
+        gripper_action_space_type = "position"
     else:
         raise ValueError
 
     # determine the action space (relative or absolute)
     action_keys = config["train"]["action_keys"]
     if "action/rel_pos" in action_keys:
-        action_space = "cartesian_velocity"
+        action_space_type = "cartesian_velocity"
         for k in action_keys:
             assert not k.startswith("action/abs_")
     elif "action/abs_pos" in action_keys:
-        action_space = "cartesian_position"
+        action_space_type = "cartesian_position"
         for k in action_keys:
             assert not k.startswith("action/rel_")
     else:
@@ -86,17 +86,17 @@ def eval_launcher(variant, run_id, exp_id):
 
     # determine the action space for the gripper
     if "action/gripper_velocity" in action_keys:
-        gripper_action_space = "velocity"
+        gripper_action_space_type = "velocity"
     elif "action/gripper_position" in action_keys:
-        gripper_action_space = "position"
+        gripper_action_space_type = "position"
     else:
         raise ValueError
 
     # Prepare Policy Wrapper #
     data_processing_kwargs = dict(
         timestep_filtering_kwargs=dict(
-            action_space=action_space,
-            gripper_action_space=gripper_action_space,
+            action_space_type=action_space_type,
+            gripper_action_space_type=gripper_action_space_type,
             robot_state_keys=["cartesian_position", "gripper_position", "joint_positions"],
             # camera_extrinsics=[],
         ),
@@ -184,11 +184,11 @@ def get_goal_im(variant, run_id, exp_id):
     # determine the action space (relative or absolute)
     action_keys = config["train"]["action_keys"]
     if "action/rel_pos" in action_keys:
-        action_space = "cartesian_velocity"
+        action_space_type= "cartesian_velocity"
         for k in action_keys:
             assert not k.startswith("action/abs_")
     elif "action/abs_pos" in action_keys:
-        action_space = "cartesian_position"
+        action_space_type= "cartesian_position"
         for k in action_keys:
             assert not k.startswith("action/rel_")
     else:
@@ -196,9 +196,9 @@ def get_goal_im(variant, run_id, exp_id):
 
     # determine the action space for the gripper
     if "action/gripper_velocity" in action_keys:
-        gripper_action_space = "velocity"
+        gripper_action_space_type= "velocity"
     elif "action/gripper_position" in action_keys:
-        gripper_action_space = "position"
+        gripper_action_space_type= "position"
     else:
         raise ValueError
 

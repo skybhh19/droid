@@ -42,8 +42,8 @@ class FrankaRobot:
         self._robot_process.kill()
         self._gripper_process.kill()
 
-    def update_command(self, command, action_space="cartesian_velocity", gripper_action_space=None, blocking=False):
-        action_dict = self.create_action_dict(command, action_space=action_space, gripper_action_space=gripper_action_space)
+    def update_command(self, command, action_space_type="cartesian_velocity", gripper_action_space_type=None, blocking=False):
+        action_dict = self.create_action_dict(command, action_space_type=action_space_type, gripper_action_space_type=gripper_action_space_type)
 
         self.update_joints(action_dict["joint_position"], velocity=False, blocking=blocking)
         self.update_gripper(action_dict["gripper_position"], velocity=False, blocking=blocking)
@@ -177,19 +177,19 @@ class FrankaRobot:
         clamped_time_to_go = min(t_max, max(time_to_go, t_min))
         return clamped_time_to_go
 
-    def create_action_dict(self, action, action_space, gripper_action_space=None, robot_state=None):
-        assert action_space in ["cartesian_position", "joint_position", "cartesian_velocity", "joint_velocity"]
+    def create_action_dict(self, action, action_space_type, gripper_action_space_type=None, robot_state=None):
+        assert action_space_type in ["cartesian_position", "joint_position", "cartesian_velocity", "joint_velocity"]
         if robot_state is None:
             robot_state = self.get_robot_state()[0]
         action_dict = {"robot_state": robot_state}
-        velocity = "velocity" in action_space
+        velocity = "velocity" in action_space_type
 
-        if gripper_action_space is None:
-            gripper_action_space = "velocity" if velocity else "position"
-        assert gripper_action_space in ["velocity", "policy"]
+        if gripper_action_space_type is None:
+            gripper_action_space_type = "velocity" if velocity else "position"
+        assert gripper_action_space_type in ["velocity", "policy"]
             
 
-        if gripper_action_space == "velocity":
+        if gripper_action_space_type == "velocity":
             action_dict["gripper_velocity"] = action[-1]
             gripper_delta = self._ik_solver.gripper_velocity_to_delta(action[-1])
             gripper_position = robot_state["gripper_position"] + gripper_delta
@@ -200,7 +200,7 @@ class FrankaRobot:
             gripper_velocity = self._ik_solver.gripper_delta_to_velocity(gripper_delta)
             action_dict["gripper_delta"] = gripper_velocity
 
-        if "cartesian" in action_space:
+        if "cartesian" in action_space_type:
             if velocity:
                 action_dict["cartesian_velocity"] = action[:-1]
                 cartesian_delta = self._ik_solver.cartesian_velocity_to_delta(action[:-1])
@@ -219,7 +219,7 @@ class FrankaRobot:
             joint_delta = self._ik_solver.joint_velocity_to_delta(action_dict["joint_velocity"])
             action_dict["joint_position"] = (joint_delta + np.array(robot_state["joint_positions"])).tolist()
 
-        if "joint" in action_space:
+        if "joint" in action_space_type:
             # NOTE: Joint to Cartesian has undefined dynamics due to IK
             if velocity:
                 action_dict["joint_velocity"] = action[:-1]

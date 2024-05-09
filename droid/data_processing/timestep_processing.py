@@ -12,18 +12,18 @@ class TimestepProcesser:
     def __init__(
         self,
         ignore_action=False,
-        action_space="cartesian_velocity",
-        gripper_action_space=None,
+        action_space_type="cartesian_velocity",
+        gripper_action_space_type=None,
         robot_state_keys=["cartesian_position", "gripper_position", "joint_positions", "joint_velocities"],
         camera_extrinsics=["hand_camera", "varied_camera", "fixed_camera"],
         state_dtype=np.float32,
         action_dtype=np.float32,
         image_transform_kwargs={},
     ):
-        assert action_space in ["cartesian_position", "joint_position", "cartesian_velocity", "joint_velocity"]
+        assert action_space_type in ["cartesian_position", "joint_position", "cartesian_velocity", "joint_velocity"]
 
-        self.action_space = action_space
-        self.gripper_key = "gripper_velocity" if "velocity" in gripper_action_space else "gripper_position"
+        self.action_space_type = action_space_type
+        self.gripper_key = "gripper_velocity" if "velocity" in gripper_action_space_type else "gripper_position"
         self.ignore_action = ignore_action
 
         self.robot_state_keys = robot_state_keys
@@ -112,7 +112,7 @@ class TimestepProcesser:
 
         ### Add Proper Action ###
         if not self.ignore_action:
-            arm_action = timestep["action"][self.action_space]
+            arm_action = timestep["action"][self.action_space_type]
             gripper_action = timestep["action"][self.gripper_key]
             action = np.concatenate([arm_action, [gripper_action]], dtype=self.action_dtype)
             processed_timestep["action"] = action

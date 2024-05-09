@@ -2,6 +2,8 @@ import glob
 import json
 import os
 
+import argparse
+
 import cv2
 from tqdm import tqdm
 
@@ -45,9 +47,15 @@ def convert_svo_to_mp4(filepath, recording_folderpath):
     with open(timestamp_output_path, "w") as jsonFile:
         json.dump(received_timestamps, jsonFile)
 
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--task", type=str)
+    args = parser.parse_args()
+    return args
 
+args = get_args()
 corrupted_traj = []
-all_folderpaths = collect_data_folderpaths()
+all_folderpaths = collect_data_folderpaths(task=args.task)
 for folderpath in tqdm(all_folderpaths):
     recording_folderpath = os.path.join(folderpath, "recordings")
     mp4_folderpath = os.path.join(recording_folderpath, "MP4")
@@ -58,7 +66,7 @@ for folderpath in tqdm(all_folderpaths):
         os.makedirs(svo_folderpath)
 
     # Move Files To New Location #
-    svo_files_to_move = glob.glob(recording_folderpath + "/*.svo")
+    svo_files_to_move = glob.glob(recording_folderpath + "/*.svo2")
     for f in svo_files_to_move:
         path_list = f.split("/")
         path_list.insert(len(path_list) - 1, "SVO")
@@ -66,7 +74,7 @@ for folderpath in tqdm(all_folderpaths):
         os.rename(f, new_f)
 
     # Gather Files To Convert #
-    svo_filepaths = glob.glob(svo_folderpath + "/*.svo")
+    svo_filepaths = glob.glob(svo_folderpath + "/*.svo2")
     mp4_filepaths = glob.glob(mp4_folderpath + "/*.mp4")
     files_to_convert = []
     for f in svo_filepaths:

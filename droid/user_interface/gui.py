@@ -1150,7 +1150,7 @@ class CameraPage(tk.Frame):
 
         # Add Mode Specific Stuff #
         if "traj" in self.mode:
-            self.controller.robot.reset_robot(randomize=True)
+            self.controller.robot.reset_robot(randomize=False)
 
             self.timer.place(relx=0.79, rely=0.01)
             self.update_timer(time.time())
@@ -1201,8 +1201,9 @@ class CameraPage(tk.Frame):
 
         # Check For Scene Changes #
         num_traj = self.controller.num_traj_saved
-        move_robot = (num_traj % move_robot_frequency == 0) and (num_traj > 0)
-        scene_change = (np.random.uniform() < scene_change_prob) or move_robot
+        # move_robot = (num_traj % move_robot_frequency == 0) and (num_traj > 0)
+        # scene_change = (np.random.uniform() < scene_change_prob) or move_robot
+        scene_change = False
 
         # Move To Next Page
         time.sleep(0.1)  # Prevents bug where robot doesnt wait to reset
