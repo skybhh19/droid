@@ -309,7 +309,7 @@ if __name__ == "__main__":
     out_f = h5py.File(output_path, "w")
     out_f_grp = out_f.create_group('data')
 
-    env_meta = dict()
+    env_meta = None
     out_f["data"].attrs["env_args"] = json.dumps(env_meta, indent=4)
 
     datasets = []
