@@ -17,7 +17,7 @@ import robomimic.utils.tensor_utils as TensorUtils
 
 import cv2
 
-def eval_launcher(variant, run_id, exp_id):
+def eval_launcher(variant, run_id, exp_id, imsize):
     # Get Directory #
     dir_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -40,10 +40,12 @@ def eval_launcher(variant, run_id, exp_id):
     config = json.loads(ckpt_dict["config"])
 
     ### infer image size ###
-    for obs_key in ckpt_dict["shape_metadata"]["all_shapes"].keys():
-        if 'camera/image' in obs_key:
-            imsize = max(ckpt_dict["shape_metadata"]["all_shapes"][obs_key])
-            break
+    # for obs_key in ckpt_dict["shape_metadata"]["all_shapes"].keys():
+    #     if 'camera/image' in obs_key:
+    #         imsize = max(ckpt_dict["shape_metadata"]["all_shapes"][obs_key])
+    #         break
+
+    imsize = imsize
 
     ckpt_dict["config"] = json.dumps(config)
     policy, _ = FileUtils.policy_from_checkpoint(ckpt_dict=ckpt_dict, device=device, verbose=True)
@@ -51,47 +53,49 @@ def eval_launcher(variant, run_id, exp_id):
     policy.eval_mode = True
 
     # determine the action space (relative or absolute)
-    action_keys = config["train"]["action_keys"]
-    if "action/rel_pos" in action_keys:
-        action_space_type = "cartesian_velocity"
-        for k in action_keys:
-            assert not k.startswith("action/abs_")
-    elif "action/abs_pos" in action_keys:
-        action_space_type = "cartesian_position"
-        for k in action_keys:
-            assert not k.startswith("action/rel_")
-    else:
-        raise ValueError
+    # action_keys = config["train"]["action_keys"]
+    # if "action/rel_pos" in action_keys:
+    #     action_space_type = "cartesian_velocity"
+    #     for k in action_keys:
+    #         assert not k.startswith("action/abs_")
+    # elif "action/abs_pos" in action_keys:
+    #     action_space_type = "cartesian_position"
+    #     for k in action_keys:
+    #         assert not k.startswith("action/rel_")
+    # else:
+    #     raise ValueError
 
     # determine the action space for the gripper
-    if "action/gripper_velocity" in action_keys:
-        gripper_action_space_type = "velocity"
-    elif "action/gripper_position" in action_keys:
-        gripper_action_space_type = "position"
-    else:
-        raise ValueError
+    # if "action/gripper_velocity" in action_keys:
+    #     gripper_action_space_type = "velocity"
+    # elif "action/gripper_position" in action_keys:
+    #     gripper_action_space_type = "position"
+    # else:
+    #     raise ValueError
 
     # determine the action space (relative or absolute)
-    action_keys = config["train"]["action_keys"]
-    if "action/rel_pos" in action_keys:
-        action_space_type = "cartesian_velocity"
-        for k in action_keys:
-            assert not k.startswith("action/abs_")
-    elif "action/abs_pos" in action_keys:
-        action_space_type = "cartesian_position"
-        for k in action_keys:
-            assert not k.startswith("action/rel_")
-    else:
-        raise ValueError
+    # action_keys = config["train"]["action_keys"]
+    # if "action/rel_pos" in action_keys:
+    #     action_space_type = "cartesian_velocity"
+    #     for k in action_keys:
+    #         assert not k.startswith("action/abs_")
+    # elif "action/abs_pos" in action_keys:
+    #     action_space_type = "cartesian_position"
+    #     for k in action_keys:
+    #         assert not k.startswith("action/rel_")
+    # else:
+    #     raise ValueError
 
     # determine the action space for the gripper
-    if "action/gripper_velocity" in action_keys:
-        gripper_action_space_type = "velocity"
-    elif "action/gripper_position" in action_keys:
-        gripper_action_space_type = "position"
-    else:
-        raise ValueError
+    # if "action/gripper_velocity" in action_keys:
+    #     gripper_action_space_type = "velocity"
+    # elif "action/gripper_position" in action_keys:
+    #     gripper_action_space_type = "position"
+    # else:
+    #     raise ValueError
 
+    action_space_type = "cartesian_velocity"
+    gripper_action_space_type = "velocity"
     # Prepare Policy Wrapper #
     data_processing_kwargs = dict(
         timestep_filtering_kwargs=dict(
@@ -136,8 +140,8 @@ def eval_launcher(variant, run_id, exp_id):
     policy_camera_kwargs.update(camera_kwargs)
 
     env = RobotEnv(
-        action_space=policy_timestep_filtering_kwargs["action_space"],
-        gripper_action_space=policy_timestep_filtering_kwargs["gripper_action_space"],
+        action_space_type=policy_timestep_filtering_kwargs["action_space_type"],
+        # gripper_action_space_type=policy_timestep_filtering_kwargs["gripper_action_space_type"],
         camera_kwargs=policy_camera_kwargs
     )
     controller = VRPolicy()
@@ -205,8 +209,8 @@ def get_goal_im(variant, run_id, exp_id):
     # Prepare Policy Wrapper #
     data_processing_kwargs = dict(
         timestep_filtering_kwargs=dict(
-            action_space=action_space,
-            gripper_action_space=gripper_action_space,
+            action_space_type=action_space_type,
+            gripper_action_space_type=gripper_action_space_type,
             robot_state_keys=["cartesian_position", "gripper_position", "joint_positions"],
             # camera_extrinsics=[],
         ),
@@ -244,8 +248,8 @@ def get_goal_im(variant, run_id, exp_id):
     policy_camera_kwargs.update(camera_kwargs)
 
     env = RobotEnv(
-        action_space=policy_timestep_filtering_kwargs["action_space"],
-        gripper_action_space=policy_timestep_filtering_kwargs["gripper_action_space"],
+        action_space_type=policy_timestep_filtering_kwargs["action_space_type"],
+        gripper_action_space_type=policy_timestep_filtering_kwargs["gripper_action_space_type"],
         camera_kwargs=policy_camera_kwargs,
         do_reset=False
     )

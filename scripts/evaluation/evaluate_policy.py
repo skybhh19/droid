@@ -11,6 +11,7 @@ if __name__ == "__main__":
     parser.add_argument('-l', '--lang_cond', action='store_true')
     parser.add_argument('-c', '--ckpt_path', type=str, default=None, 
         help='Path to Pytorch checkpoint (.pth) corresponding to the policy you want to evaluate.')
+    parser.add_argument('--imsize', type=int, required=True)
     args = parser.parse_args()
 
     variant = dict(
@@ -62,4 +63,4 @@ if __name__ == "__main__":
             file.write(user_input)
     
     print("Evaluating Policy")
-    eval_launcher(variant, run_id=1, exp_id=0)
+    eval_launcher(variant, run_id=1, exp_id=0, imsize=args.imsize)

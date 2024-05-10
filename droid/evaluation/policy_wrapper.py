@@ -104,28 +104,31 @@ class PolicyWrapperRobomimic:
         # import pdb; pdb.set_trace()
 
         obs = {
-            "robot_state/cartesian_position": observation["robot_state"]["cartesian_position"],
-            "robot_state/gripper_position": [observation["robot_state"]["gripper_position"]], # wrap as array, raw data is single float
-            "camera/image/hand_camera_left_image": processed_timestep["observation"]["camera"]["image"]["hand_camera"][0],
-            "camera/image/hand_camera_right_image": processed_timestep["observation"]["camera"]["image"]["hand_camera"][1],
-            "camera/image/varied_camera_1_left_image": processed_timestep["observation"]["camera"]["image"]["varied_camera"][0],
-            "camera/image/varied_camera_1_right_image": processed_timestep["observation"]["camera"]["image"]["varied_camera"][1],
-            "camera/image/varied_camera_2_left_image": processed_timestep["observation"]["camera"]["image"]["varied_camera"][2],
-            "camera/image/varied_camera_2_right_image": processed_timestep["observation"]["camera"]["image"]["varied_camera"][3],
-
-            "camera/extrinsics/hand_camera_left": self.convert_raw_extrinsics_to_Twc(extrinsics_dict["hand_camera"][0]),
-            "camera/extrinsics/hand_camera_right": self.convert_raw_extrinsics_to_Twc(extrinsics_dict["hand_camera"][2]),
-            "camera/extrinsics/varied_camera_1_left": self.convert_raw_extrinsics_to_Twc(extrinsics_dict["varied_camera"][0]),
-            "camera/extrinsics/varied_camera_1_right": self.convert_raw_extrinsics_to_Twc(extrinsics_dict["varied_camera"][1]),
-            "camera/extrinsics/varied_camera_2_left": self.convert_raw_extrinsics_to_Twc(extrinsics_dict["varied_camera"][2]),
-            "camera/extrinsics/varied_camera_2_right": self.convert_raw_extrinsics_to_Twc(extrinsics_dict["varied_camera"][3]),
-
-            "camera/intrinsics/hand_camera_left": intrinsics_dict["hand_camera"][0],
-            "camera/intrinsics/hand_camera_right": intrinsics_dict["hand_camera"][1],
-            "camera/intrinsics/varied_camera_1_left": intrinsics_dict["varied_camera"][0],
-            "camera/intrinsics/varied_camera_1_right": intrinsics_dict["varied_camera"][1],
-            "camera/intrinsics/varied_camera_2_left": intrinsics_dict["varied_camera"][2],
-            "camera/intrinsics/varied_camera_2_right": intrinsics_dict["varied_camera"][3],
+            "norm_ee_obs": observation["norm_ee_obs"],
+            "hand_camera_right_image": processed_timestep["observation"]["camera"]["image"]["hand_camera"][1],
+            "varied_camera_1_right_image": processed_timestep["observation"]["camera"]["image"]["hand_camera"][1],
+            # "robot_state/cartesian_position": observation["robot_state"]["cartesian_position"],
+            # "robot_state/gripper_position": [observation["robot_state"]["gripper_position"]], # wrap as array, raw data is single float
+            # "camera/image/hand_camera_left_image": processed_timestep["observation"]["camera"]["image"]["hand_camera"][0],
+            # "camera/image/hand_camera_right_image": processed_timestep["observation"]["camera"]["image"]["hand_camera"][1],
+            # "camera/image/varied_camera_1_left_image": processed_timestep["observation"]["camera"]["image"]["varied_camera"][0],
+            # "camera/image/varied_camera_1_right_image": processed_timestep["observation"]["camera"]["image"]["hand_camera"][1],
+            # "camera/image/varied_camera_2_left_image": processed_timestep["observation"]["camera"]["image"]["varied_camera"][2],
+            # "camera/image/varied_camera_2_right_image": processed_timestep["observation"]["camera"]["image"]["varied_camera"][3],
+            #
+            # "camera/extrinsics/hand_camera_left": self.convert_raw_extrinsics_to_Twc(extrinsics_dict["hand_camera"][0]),
+            # "camera/extrinsics/hand_camera_right": self.convert_raw_extrinsics_to_Twc(extrinsics_dict["hand_camera"][2]),
+            # "camera/extrinsics/varied_camera_1_left": self.convert_raw_extrinsics_to_Twc(extrinsics_dict["varied_camera"][0]),
+            # "camera/extrinsics/varied_camera_1_right": self.convert_raw_extrinsics_to_Twc(extrinsics_dict["varied_camera"][1]),
+            # "camera/extrinsics/varied_camera_2_left": self.convert_raw_extrinsics_to_Twc(extrinsics_dict["varied_camera"][2]),
+            # "camera/extrinsics/varied_camera_2_right": self.convert_raw_extrinsics_to_Twc(extrinsics_dict["varied_camera"][3]),
+            #
+            # "camera/intrinsics/hand_camera_left": intrinsics_dict["hand_camera"][0],
+            # "camera/intrinsics/hand_camera_right": intrinsics_dict["hand_camera"][1],
+            # "camera/intrinsics/varied_camera_1_left": intrinsics_dict["varied_camera"][0],
+            # "camera/intrinsics/varied_camera_1_right": intrinsics_dict["varied_camera"][1],
+            # "camera/intrinsics/varied_camera_2_left": intrinsics_dict["varied_camera"][2],
+            # "camera/intrinsics/varied_camera_2_right": intrinsics_dict["varied_camera"][3],
         }
 
         # set item of obs as np.array
