@@ -16,7 +16,7 @@ data_dir = os.path.join(dir_path, "../../data/")
 
 
 class DataCollecter:
-    def __init__(self, env, controller, policy=None, save_data=True, save_traj_dir=None, task=None):
+    def __init__(self, env, controller, policy=None, save_data=True, save_traj_dir=None, task=None, DoF=3):
         self.env = env
         self.controller = controller
         self.policy = policy
@@ -38,7 +38,7 @@ class DataCollecter:
         # Make Sure Log Directorys Exist #
         if save_traj_dir is None:
             save_traj_dir = data_dir
-        save_traj_dir = os.path.join(save_traj_dir, task)
+        save_traj_dir = os.path.join(save_traj_dir, '{}_{}'.format(task, DoF))
         self.success_logdir = os.path.join(save_traj_dir, "success", str(date.today()))
         self.failure_logdir = os.path.join(save_traj_dir, "failure", str(date.today()))
         if not os.path.isdir(self.success_logdir):

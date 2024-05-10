@@ -51,11 +51,11 @@ def generate_train_test_split(filter_func=None, remove_failures=True, train_p=0.
     return train_folderpaths, test_folderpaths
 
 
-def collect_data_folderpaths(task, filter_func=None, remove_failures=True):
+def collect_data_folderpaths(task, DoF, filter_func=None, remove_failures=True):
     # Prepare Data Folder #
     dir_path = os.path.dirname(os.path.realpath(__file__))
     data_dir = os.path.join(dir_path, "../../data")
-    data_dir = os.path.join(data_dir, task)
+    data_dir = os.path.join(data_dir, '{}_{}'.format(task, DoF))
     if remove_failures:
         data_dir = os.path.join(data_dir, "success")
 

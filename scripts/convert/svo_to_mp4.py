@@ -49,13 +49,14 @@ def convert_svo_to_mp4(filepath, recording_folderpath):
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--task", type=str)
+    parser.add_argument("--task", type=str, required=True)
+    parser.add_argument("--DoF", type=int, required=True)
     args = parser.parse_args()
     return args
 
 args = get_args()
 corrupted_traj = []
-all_folderpaths = collect_data_folderpaths(task=args.task)
+all_folderpaths = collect_data_folderpaths(task=args.task, DoF=args.DoF)
 for folderpath in tqdm(all_folderpaths):
     recording_folderpath = os.path.join(folderpath, "recordings")
     mp4_folderpath = os.path.join(recording_folderpath, "MP4")
@@ -65,16 +66,26 @@ for folderpath in tqdm(all_folderpaths):
     if not os.path.exists(svo_folderpath):
         os.makedirs(svo_folderpath)
 
+
+    svo2_files_to_move = glob.glob(recording_folderpath + "/*.svo2") + glob.glob(svo_folderpath + "/*.svo2")
+    for f in svo2_files_to_move:
+        path_list = f.split("/")
+        path_list[-1] = path_list[-1][:-1]
+        new_f = "/".join(path_list)
+        os.rename(f, new_f)
+
     # Move Files To New Location #
-    svo_files_to_move = glob.glob(recording_folderpath + "/*.svo2")
+    svo_files_to_move = glob.glob(recording_folderpath + "/*.svo")
     for f in svo_files_to_move:
         path_list = f.split("/")
         path_list.insert(len(path_list) - 1, "SVO")
+        if path_list[-1][:-4] == 'svo2':
+            path_list[-1] = path_list[-1][:-1]
         new_f = "/".join(path_list)
         os.rename(f, new_f)
 
     # Gather Files To Convert #
-    svo_filepaths = glob.glob(svo_folderpath + "/*.svo2")
+    svo_filepaths = glob.glob(svo_folderpath + "/*.svo")
     mp4_filepaths = glob.glob(mp4_folderpath + "/*.mp4")
     files_to_convert = []
     for f in svo_filepaths:

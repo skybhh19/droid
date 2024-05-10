@@ -53,14 +53,14 @@ class RobotEnv(gym.Env):
             #     np.array([0.70, 0.28, 0.35, 0.085]),
             # )
             self.ee_space = Box(
-                np.array([0.45, -0.24, 0.12, 0.00]),
-                np.array([0.7, 0.17, 0.3, 0.085]),
+                np.array([0.45, -0.24, 0.12]),
+                np.array([0.7, 0.17, 0.3]),
             )
         elif self.DoF == 4:
             # EE position (x, y, z) + gripper width
             self.ee_space = Box(
-                np.array([0.55, -0.06, 0.12, -1.57, 0.00]),
-                np.array([0.73, 0.25, 0.35, 0.0, 0.085]),
+                np.array([0.55, -0.06, 0.12, -1.57]),
+                np.array([0.73, 0.25, 0.35, 0.0]),
             )
 
         if self.DoF < 6:
@@ -135,11 +135,7 @@ class RobotEnv(gym.Env):
         return self.get_ee_angle()
 
     def step(self, action):
-        assert len(action) == 7
-        if self.DoF == 3:
-            action = np.concatenate([action[:3], action[6:]])
-        elif self.DoF == 4:
-            action = np.concatenate([action[:3], action[5:]])
+        input_action = action.copy()
         assert len(action) == (self.DoF + 1)
         if self.DoF < 6:
             pos_vel, rot_vel, gripper_vel = self._format_action(action)
@@ -165,8 +161,10 @@ class RobotEnv(gym.Env):
             action,
             action_space_type=self.action_space_type,
         )
+        assert len(input_action) == (self.DoF + 1)
         # print("cur pos", self.get_ee_pos())
         # Return Action Info
+        action_info['input_action'] = input_action
         return action_info
 
     def reset(self, randomize=False):
@@ -212,21 +210,34 @@ class RobotEnv(gym.Env):
             extrinsics[cam_id] = change_pose_frame(extrinsics[cam_id], gripper_pose)
         return extrinsics
 
+    def _normalize_ee_cartesian(self, cartesian_position):
+        assert len(cartesian_position) == 6
+        if self.DoF == 3:
+            obs = cartesian_position[:3]
+        elif self.DoF == 4:
+            obs = np.concatenate([cartesian_position[:3], cartesian_position[-1:]])
+        else:
+            raise NotImplementedError
+        print("ee_obs", obs)
+        """Normalizes low-dim obs between [-1,1]."""
+        # x_new = 2 * (x - min(x)) / (max(x) - min(x)) - 1
+        # x = (x_new + 1) * (max (x) - min(x)) / 2 + min(x)
+        # Source: https://stats.stackexchange.com/questions/178626/how-to-normalize-data-between-1-and-1
+        normalized_obs = 2 * (obs - self.ee_space.low) / (self.ee_space.high - self.ee_space.low) - 1
+        return normalized_obs
+
     def get_observation(self):
         obs_dict = {"timestamp": {}}
 
         # Robot State #
         state_dict, timestamp_dict = self.get_state()
         obs_dict["robot_state"] = state_dict
+        obs_dict["norm_ee_obs"] = np.concatenate([self._normalize_ee_cartesian(state_dict["cartesian_position"]), np.array([state_dict["gripper_position"]])])
+        print("norm_ee_obs", obs_dict["norm_ee_obs"])
         obs_dict["timestamp"]["robot_state"] = timestamp_dict
 
         # Camera Readings #
         camera_obs, camera_timestamp = self.read_cameras()
-        camera_dict = dict(image=dict(
-            wrist_image=camera_obs["image"]["19824535_left"][:, :, 0:3],
-            side_image=camera_obs["image"]["23404442_left"][:, :, 0:3],
-        ))
-
 
         obs_dict.update(camera_obs)
         # obs_dict.update(camera_dict)

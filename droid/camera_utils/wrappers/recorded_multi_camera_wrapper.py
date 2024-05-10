@@ -38,7 +38,6 @@ class RecordedMultiCameraWrapper:
         # Read Cameras In Randomized Order #
         all_cam_ids = list(self.camera_dict.keys())
         random.shuffle(all_cam_ids)
-
         for cam_id in all_cam_ids:
             cam_type = camera_type_dict[cam_id]
             curr_cam_kwargs = self.camera_kwargs.get(cam_type, {})

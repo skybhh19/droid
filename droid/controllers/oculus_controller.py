@@ -27,6 +27,7 @@ class VRPolicy:
         rot_action_gain: float = 2,
         gripper_action_gain: float = 3,
         rmat_reorder: list = [-2, -1, -3, 4],
+        DoF: int = 3,
     ):
         self.oculus_reader = OculusReader()
         self.vr_to_global_mat = np.eye(4)
@@ -39,6 +40,7 @@ class VRPolicy:
         self.gripper_action_gain = gripper_action_gain
         self.global_to_env_mat = vec_to_reorder_mat(rmat_reorder)
         self.controller_id = "r" if right_controller else "l"
+        self.DoF = DoF
         self.reset_orientation = True
         self.reset_state()
 
@@ -169,6 +171,10 @@ class VRPolicy:
         info_dict = {"target_cartesian_position": target_cartesian, "target_gripper_position": target_gripper}
         action = np.concatenate([lin_vel, rot_vel, [gripper_vel]])
         action = action.clip(-1, 1)
+        if self.DoF == 3:
+            action = np.concatenate([action[:3], action[6:]])
+        elif self.DoF == 4:
+            action = np.concatenate([action[:3], action[5:]])
 
         # Return #
         if include_info:

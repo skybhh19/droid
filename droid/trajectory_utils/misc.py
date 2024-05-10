@@ -63,6 +63,7 @@ def collect_trajectory(
     num_steps = 0
     if reset_robot:
         env.reset(randomize=randomize_reset)
+    start_recording = False
 
     # Begin! #
     while True:
@@ -102,18 +103,29 @@ def collect_trajectory(
         # Step Environment #
         control_timestamps["control_start"] = time_ms()
         if skip_action:
-            action_info = env.create_action_dict(np.zeros_like(action))
+            if env.action_space_type == 'cartesian_velocity':
+                action_info = env.create_action_dict(np.zeros(7))
+                # action_info = env.create_action_dict(np.zeros_like(action))
+            else:
+                raise NotImplementedError
+            # action_info = None
+            if start_recording:
+                controller_info['failure'] = True
+                print("You released the 'movement enabled' button while recording. Current trajectory is ended and labelled as failed demo.")
         else:
             action_info = env.step(action)
-        action_info.update(controller_action_info)
+            action_info.update(controller_action_info)
 
         # Save Data #
         control_timestamps["step_end"] = time_ms()
         obs["timestamp"]["control"] = control_timestamps
         timestep = {"observation": obs, "action": action_info}
-        if save_filepath:
+        if save_filepath and start_recording:
             traj_writer.write_timestep(timestep)
-
+        # Only start saving data when the teleoperator presses the movement_enabled button for the first time.
+        if not start_recording and controller_info["movement_enabled"] and recording_folderpath:
+            env.camera_reader.start_recording(recording_folderpath)
+            start_recording = True
         # Check Termination #
         num_steps += 1
         if horizon is not None:
@@ -306,7 +318,8 @@ def replay_trajectory(
         # Get Action In Desired Action Space #
         arm_action = timestep["action"][env.action_space_type]
         gripper_action = timestep["action"][gripper_key]
-        action = np.concatenate([arm_action, [gripper_action]])
+        # action = np.concatenate([arm_action, [gripper_action]])
+        action = timestep["action"]["input_action"]
         controller_info = timestep["observation"]["controller_info"]
         movement_enabled = controller_info.get("movement_enabled", True)
 
