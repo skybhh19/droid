@@ -1,6 +1,7 @@
 from copy import deepcopy
 
 import cv2
+from PIL import Image
 import numpy as np
 
 from droid.misc.parameters import hand_camera_id
@@ -26,7 +27,7 @@ def gather_zed_cameras():
     return all_zed_cameras
 
 
-resize_func_map = {"cv2": cv2.resize, None: None}
+# resize_func_map = {"cv2": cv2.resize, None: None, "pil": Image.resize}
 
 standard_params = dict(
     depth_minimum_distance=0.1, camera_resolution=sl.RESOLUTION.HD720, depth_stabilization=False, camera_fps=60, camera_image_flip=sl.FLIP_MODE.OFF
@@ -73,7 +74,8 @@ class ZedCamera:
         # Permenant Values #
         self.depth = depth
         self.pointcloud = pointcloud
-        self.resize_func = resize_func_map[resize_func]
+        # self.resize_func = resize_func_map[resize_func]
+        self.resize_func = resize_func
 
     ### Camera Modes ###
     def set_calibration_mode(self):
@@ -169,7 +171,13 @@ class ZedCamera:
         frame = deepcopy(frame.get_data())
         if self.resizer_resolution == (0, 0):
             return frame
-        return self.resize_func(frame, self.resizer_resolution)
+        # return self.resize_func(frame, self.resizer_resolution)
+        if self.resize_func == 'cv2':
+            return cv2.resize(frame, self.resizer_resolution, interpolation=cv2.INTER_AREA)
+        elif self.resize_func == 'pil':
+            return frame.resize(self.resizer_resolution, resample=Image.Resampling.BICUBIC)
+        else:
+            raise NotImplementedError
 
     def read_camera(self):
         # Skip if Read Unnecesary #

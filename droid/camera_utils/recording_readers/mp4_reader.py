@@ -3,9 +3,9 @@ import os
 from copy import deepcopy
 
 import cv2
+from PIL import Image
 
-resize_func_map = {"cv2": cv2.resize, None: None}
-
+# resize_func_map = {"cv2": cv2.resize, None: None, "pil": Image.resize}
 
 class MP4Reader:
     def __init__(self, filepath, serial_number):
@@ -37,7 +37,8 @@ class MP4Reader:
         self.image = image
         self.concatenate_images = concatenate_images
         self.resolution = resolution
-        self.resize_func = resize_func_map[resize_func]
+        # self.resize_func = resize_func_map[resize_func]
+        self.resize_func = resize_func
         self.skip_reading = not image
         if self.skip_reading:
             return
@@ -68,8 +69,13 @@ class MP4Reader:
         frame = deepcopy(frame)
         if self.resolution == (0, 0):
             return frame
-        return self.resize_func(frame, self.resolution)
-        # return cv2.resize(frame, self.resolution)#, interpolation=cv2.INTER_AREA)
+        # return self.resize_func(frame, self.resolution)
+        if self.resize_func == 'cv2':
+            return cv2.resize(frame, self.resizer_resolution, interpolation=cv2.INTER_AREA)
+        elif self.resize_func == 'pil':
+            return frame.resize(self.resizer_resolution, resample=Image.Resampling.BICUBIC)
+        else:
+            raise NotImplementedError
 
     def read_camera(self, ignore_data=False, correct_timestamp=None, return_timestamp=False):
         # Skip if Read Unnecesary #

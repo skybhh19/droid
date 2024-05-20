@@ -218,7 +218,7 @@ class RobotEnv(gym.Env):
             obs = np.concatenate([cartesian_position[:3], cartesian_position[-1:]])
         else:
             raise NotImplementedError
-        print("ee_obs", obs)
+        # print("ee_obs", obs)
         """Normalizes low-dim obs between [-1,1]."""
         # x_new = 2 * (x - min(x)) / (max(x) - min(x)) - 1
         # x = (x_new + 1) * (max (x) - min(x)) / 2 + min(x)
@@ -233,7 +233,7 @@ class RobotEnv(gym.Env):
         state_dict, timestamp_dict = self.get_state()
         obs_dict["robot_state"] = state_dict
         obs_dict["norm_ee_obs"] = np.concatenate([self._normalize_ee_cartesian(state_dict["cartesian_position"]), np.array([state_dict["gripper_position"]])])
-        print("norm_ee_obs", obs_dict["norm_ee_obs"])
+        # print("norm_ee_obs", obs_dict["norm_ee_obs"])
         obs_dict["timestamp"]["robot_state"] = timestamp_dict
 
         # Camera Readings #
