@@ -303,7 +303,7 @@ if __name__ == "__main__":
     )
     
     args = parser.parse_args()
-    output_path = os.path.join(args.folder, "trajectory_im{}.hdf5".format(args.imsize))
+    output_path = os.path.join(args.folder, "trajectory_im{}_n{}.hdf5".format(args.imsize, args.num_demo))
     print("output file", output_path)
     assert not os.path.exists(output_path)
     out_f = h5py.File(output_path, "w")
