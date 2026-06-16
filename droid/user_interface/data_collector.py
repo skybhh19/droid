@@ -82,8 +82,8 @@ class DataCollecter:
             save_filepath = None
             recording_folderpath = None
         else:
-            if len(self.full_cam_ids) != 6:
-                raise ValueError("WARNING: User is trying to collect data without all three cameras running!")
+            if len(self.full_cam_ids) != 4:
+                raise ValueError("WARNING: User is trying to collect data without all two cameras running!")
             save_filepath = os.path.join(self.failure_logdir, info["time"], "trajectory.h5")
             recording_folderpath = os.path.join(self.failure_logdir, info["time"], "recordings")
             if not os.path.isdir(recording_folderpath):
@@ -129,10 +129,14 @@ class DataCollecter:
         return success
 
     def check_calibration_info(self, remove_hand_camera=False):
-        info_dict = check_calibration_info(self.full_cam_ids)
-        if remove_hand_camera:
-            info_dict["old"] = [cam_id for cam_id in info_dict["old"] if (hand_camera_id not in cam_id)]
-        return info_dict
+        # info_dict = check_calibration_info(self.full_cam_ids)
+        # if remove_hand_camera:
+        #     info_dict["old"] = [cam_id for cam_id in info_dict["old"] if (hand_camera_id not in cam_id)]
+        # return info_dict
+        return {
+            "missing": [],
+            "old": [],
+        }
 
     def get_gui_imgs(self, obs):
         all_cam_ids = list(obs["image"].keys())

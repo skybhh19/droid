@@ -94,16 +94,16 @@ def run_indexing(
                     continue
 
                 # Verify SVO Files
-                if not validate_svo_existence(trajectory_dir):
-                    scanned_paths[outcome][rel_trajectory_dir] = True
-                    errored_paths[outcome][rel_trajectory_dir] = (
-                        "[Indexing Error] Missing SVO Files! "
-                        "Ensure all 3 SVO files are in `<timestamp>/recordings/SVO/<serial>.svo!"
-                    )
-                    totals["scanned"][outcome] = len(scanned_paths[outcome])
-                    totals["errored"][outcome] = len(errored_paths[outcome])
-                    progress.update()
-                    continue
+                # if not validate_svo_existence(trajectory_dir):
+                #     scanned_paths[outcome][rel_trajectory_dir] = True
+                #     errored_paths[outcome][rel_trajectory_dir] = (
+                #         "[Indexing Error] Missing SVO Files! "
+                #         "Ensure all 3 SVO files are in `<timestamp>/recordings/SVO/<serial>.svo!"
+                #     )
+                #     totals["scanned"][outcome] = len(scanned_paths[outcome])
+                #     totals["errored"][outcome] = len(errored_paths[outcome])
+                #     progress.update()
+                #     continue
 
                 # Otherwise -- we're good for indexing!
                 indexed_uuids[outcome][uuid] = rel_trajectory_dir
