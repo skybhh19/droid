@@ -25,7 +25,7 @@ DROID_CONTROL_FREQUENCY = 15
 @dataclasses.dataclass
 class Args:
     # Hardware parameters
-    external_camera_id: str = "23404442"  # e.g., "24259877"
+    external_camera_id: str = "31078156"  # September 21 setup; use 23404442 for the older setup.
     wrist_camera_id: str = "17471093"  # e.g., "13062452"
 
     # Rollout parameters
