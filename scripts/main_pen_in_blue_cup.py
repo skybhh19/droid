@@ -31,8 +31,8 @@ class Args:
     # Rollout parameters
     max_timesteps: int = 600
     # How many actions to execute from a predicted action chunk before querying policy server again
-    # 8 is usually a good default (equals 0.5 seconds of action execution).
-    open_loop_horizon: int = 8
+    # Six actions correspond to 0.4 seconds of execution at 15 Hz.
+    open_loop_horizon: int = 6
     # Whether to render an mp4 rollout video.
     render_video: bool = True
     # Directory where rollout videos are saved.
@@ -134,19 +134,12 @@ def main(args: Args):
                     # assert pred_action_chunk.shape == (10, 8)
 
                 # Select current action to execute from chunk
-                action = pred_action_chunk[actions_from_chunk_completed]
+                action = np.array(pred_action_chunk[actions_from_chunk_completed], copy=True)
                 actions_from_chunk_completed += 1
 
-                # Binarize gripper action
-                if action[-1].item() > 0.5:
-                    # action[-1] = 1.0
-                    action = np.concatenate([action[:-1], np.ones((1,))])
-                else:
-                    # action[-1] = 0.0
-                    action = np.concatenate([action[:-1], np.zeros((1,))])
-
-                # clip all dimensions of action to [-1, 1]
-                action = np.clip(action, -1, 1)
+                # Preserve continuous gripper targets, matching the training data.
+                action[:7] = np.clip(action[:7], -1.0, 1.0)
+                action[-1] = np.clip(action[-1], 0.0, 1.0)
 
                 env.step(action)
 
@@ -186,16 +179,13 @@ def main(args: Args):
         success_rate_so_far = (df["success"].sum() + success) / num_rollouts
         print(f"Success rate so far: {success_rate_so_far:.3f} ({df['success'].sum() + success:g}/{num_rollouts})")
 
-        df = df.append(
-            {
-                "success": success,
-                "duration": t_step,
-                "video_filename": video_path,
-                "num_rollouts": num_rollouts,
-                "success_rate_so_far": success_rate_so_far,
-            },
-            ignore_index=True,
-        )
+        df.loc[len(df)] = {
+            "success": success,
+            "duration": t_step,
+            "video_filename": video_path,
+            "num_rollouts": num_rollouts,
+            "success_rate_so_far": success_rate_so_far,
+        }
 
         if input("Do one more eval? (enter y or n) ").lower() != "y":
             break
